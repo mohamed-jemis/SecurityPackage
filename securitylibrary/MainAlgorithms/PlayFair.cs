@@ -14,9 +14,13 @@ namespace SecurityLibrary
         {
             string plainText = string.Empty;
             cipherText = cipherText.ToUpper();
-            key= key.ToUpper();
+            key = key.ToUpper();
 
-            HashSet<char> tableSet = key.ToHashSet<char>();
+            HashSet<char> tableSet = new HashSet<char>();
+
+            for (int i = 0; i < key.Length; i++)
+                tableSet.Add(key[i]);
+
             tableSet.UnionWith(letters);
 
             List<char> table = tableSet.ToList<char>();
@@ -51,7 +55,7 @@ namespace SecurityLibrary
                 }
             }
 
-            for (int i = 1; i < plainText.Length - 1; i+=2)
+            for (int i = 1; i < plainText.Length - 1; i += 2)
             {
                 if (plainText[i] == 'X' && plainText[i + 1] == plainText[i - 1])
                 {
@@ -70,21 +74,25 @@ namespace SecurityLibrary
         {
             string cipherText = string.Empty;
             plainText = plainText.ToUpper();
-            key= key.ToUpper();
+            key = key.ToUpper();
 
-            for (int i = 0; i < plainText.Length - 1; i+=2)
+            for (int i = 0; i < plainText.Length - 1; i += 2)
             {
                 if (plainText[i] == plainText[i + 1])
-                    plainText = plainText.Insert(i+1, "X");
+                    plainText = plainText.Insert(i + 1, "X");
             }
 
-            if (plainText.Length %2 == 1) plainText += 'X';
+            if (plainText.Length % 2 == 1) plainText += 'X';
 
-            HashSet<char> tableSet = key.ToHashSet<char>();
+            HashSet<char> tableSet = new HashSet<char>();
+
+            for (int i = 0; i < key.Length; i++)
+                tableSet.Add(key[i]);
+
             tableSet.UnionWith(letters);
 
             List<char> table = tableSet.ToList<char>();
-            plainText= plainText.Replace("J", "I");
+            plainText = plainText.Replace("J", "I");
 
             for (int i = 0; i < plainText.Length - 1; i += 2)
             {
