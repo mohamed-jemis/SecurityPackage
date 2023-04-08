@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
+
 namespace SecurityLibrary
 {
     public class PlayFair : ICryptographic_Technique<string, string>
@@ -15,8 +16,7 @@ namespace SecurityLibrary
             string plainText = string.Empty;
             cipherText = cipherText.ToUpper();
             key= key.ToUpper();
-
-            HashSet<char> tableSet = key.ToHashSet<char>();
+            //HashSet<char> tableSet = key.ToHashSet<char>();
             tableSet.UnionWith(letters);
 
             List<char> table = tableSet.ToList<char>();
@@ -80,7 +80,7 @@ namespace SecurityLibrary
 
             if (plainText.Length %2 == 1) plainText += 'X';
 
-            HashSet<char> tableSet = key.ToHashSet<char>();
+            HashSet<char> tableSet = key.to
             tableSet.UnionWith(letters);
 
             List<char> table = tableSet.ToList<char>();
@@ -117,5 +117,5 @@ namespace SecurityLibrary
 
             return cipherText;
         }
-    }
+    } 
 }
