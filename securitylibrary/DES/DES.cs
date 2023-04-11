@@ -154,7 +154,7 @@ namespace SecurityLibrary.DES
                 string expanded_right = permutation(RPT,exp_d);
                 string xored_right = XOR(expanded_right, keys[i]);
                 //xored_right should be sboxed
-                string sboxed_right = sbox(xored_right);
+                string sboxed_right = s_box(xored_right);
                 string permutated_sboxed_right = permutation(sboxed_right, sbox_permutation);
 
                 LPT = XOR(LPT, permutated_sboxed_right);
@@ -251,6 +251,37 @@ namespace SecurityLibrary.DES
             temp = left;
             left = right;
             right = temp;
+        }
+        private string s_box(string word)
+        {
+            String[] str_list = new String[8];
+            int counter = 0;
+
+            for (int i = 0; i < 48; i += 6)
+            {
+                str_list[counter] = word.Substring(i, 6);
+                counter++;
+            }
+
+            string final = "";
+
+            for (int i = 0; i < 8; i++)
+            {
+                char[] chars = { str_list[i][0], str_list[i][5] };
+                string s1 = new string(chars);
+
+                String s2 = str_list[i].Substring(1, 4);
+
+                int decimalValue1 = Convert.ToInt32(s1, 2);
+                int decimalValue2 = Convert.ToInt32(s2, 2);
+
+                // value get from s box 
+                int value = sbox[i,decimalValue1,decimalValue2];
+
+                string binary2 = Convert.ToString(value, 2);
+                final += binary2;
+            }
+            return final;
         }
     }
 }
