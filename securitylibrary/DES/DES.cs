@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace SecurityLibrary.DES
 {
@@ -12,7 +13,7 @@ namespace SecurityLibrary.DES
     /// </summary>
     public class DES : CryptographicTechnique
     {
-        Dictionary<char, string> convertDict = new Dictionary<char, string>()
+        static Dictionary<char, string> HexToBinDict = new Dictionary<char, string>()
         {
             { '0', "0000" },
             { '1', "0001" },
@@ -20,21 +21,21 @@ namespace SecurityLibrary.DES
             { '3', "0011" },
             { '4', "0100" },
             { '5', "0101" },
-            { '6', "0110" }, 
-            { '7', "0111" }, 
-            { '8', "1000" }, 
-            { '9', "1001" }, 
-            { 'A', "1010" }, 
-            { 'B', "1011" }, 
-            { 'C', "1100" }, 
-            { 'D', "1101" }, 
-            { 'E', "1110" }, 
+            { '6', "0110" },
+            { '7', "0111" },
+            { '8', "1000" },
+            { '9', "1001" },
+            { 'A', "1010" },
+            { 'B', "1011" },
+            { 'C', "1100" },
+            { 'D', "1101" },
+            { 'E', "1110" },
             { 'F', "1111" },
         };
 
 
         int[] PC1 = new int[]
-        { 
+        {
             57, 49, 41, 33, 25, 17, 9,
             1, 58, 50, 42, 34, 26, 18,
             10, 2, 59, 51, 43, 35, 27,
@@ -60,7 +61,7 @@ namespace SecurityLibrary.DES
         };
 
         int[] IP = new int[]
-        { 
+        {
             58, 50, 42, 34, 26, 18, 10, 2,
             60, 52, 44, 36, 28, 20, 12, 4,
             62, 54, 46, 38, 30, 22, 14, 6,
@@ -72,7 +73,7 @@ namespace SecurityLibrary.DES
         };
 
         int[] FP = new int[]
-        { 
+        {
             40, 8, 48, 16, 56, 24, 64, 32,
             39, 7, 47, 15, 55, 23, 63, 31,
             38, 6, 46, 14, 54, 22, 62, 30,
@@ -105,6 +106,60 @@ namespace SecurityLibrary.DES
             22, 11, 4, 25,
         };
 
+        int[,,] sboxes = new int[,,]
+        {
+            {
+                {14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7},
+                {0, 15, 7, 4, 14, 2, 13, 1, 10, 6, 12, 11, 9, 5, 3, 8},
+                {4, 1, 14, 8, 13, 6, 2, 11, 15, 12, 9, 7, 3, 10, 5, 0},
+                {15, 12, 8, 2, 4, 9, 1, 7, 5, 11, 3, 14, 10, 0, 6, 13}
+            },
+            {
+                {15, 1, 8, 14, 6, 11, 3, 4, 9, 7, 2, 13, 12, 0, 5, 10},
+                {3, 13, 4, 7, 15, 2, 8, 14, 12, 0, 1, 10, 6, 9, 11, 5},
+                {0, 14, 7, 11, 10, 4, 13, 1, 5, 8, 12, 6, 9, 3, 2, 15},
+                {13, 8, 10, 1, 3, 15, 4, 2, 11, 6, 7, 12, 0, 5, 14, 9}
+            },
+            {
+                {10, 0, 9, 14, 6, 3, 15, 5, 1, 13, 12, 7, 11, 4, 2, 8},
+                {13, 7, 0, 9, 3, 4, 6, 10, 2, 8, 5, 14, 12, 11, 15, 1},
+                {13, 6, 4, 9, 8, 15, 3, 0, 11, 1, 2, 12, 5, 10, 14, 7},
+                {1, 10, 13, 0, 6, 9, 8, 7, 4, 15, 14, 3, 11, 5, 2, 12}
+            },
+            {
+                {7, 13, 14, 3, 0, 6, 9, 10, 1, 2, 8, 5, 11, 12, 4, 15},
+                {13, 8, 11, 5, 6, 15, 0, 3, 4, 7, 2, 12, 1, 10, 14, 9},
+                {10, 6, 9, 0, 12, 11, 7, 13, 15, 1, 3, 14, 5, 2, 8, 4},
+                {3, 15, 0, 6, 10, 1, 13, 8, 9, 4, 5, 11, 12, 7, 2, 14}
+            },
+            {
+                {2, 12, 4, 1, 7, 10, 11, 6, 8, 5, 3, 15, 13, 0, 14, 9},
+                {14, 11, 2, 12, 4, 7, 13, 1, 5, 0, 15, 10, 3, 9, 8, 6},
+                {4, 2, 1, 11, 10, 13, 7, 8, 15, 9, 12, 5, 6, 3, 0, 14},
+                {11, 8, 12, 7, 1, 14, 2, 13, 6, 15, 0, 9, 10, 4, 5, 3}
+            },
+            {
+                {12, 1, 10, 15, 9, 2, 6, 8, 0, 13, 3, 4, 14, 7, 5, 11},
+                {10, 15, 4, 2, 7, 12, 9, 5, 6, 1, 13, 14, 0, 11, 3, 8},
+                {9, 14, 15, 5, 2, 8, 12, 3, 7, 0, 4, 10, 1, 13, 11, 6},
+                {4, 3, 2, 12, 9, 5, 15, 10, 11, 14, 1, 7, 6, 0, 8, 13}
+            },
+            {
+                {4, 11, 2, 14, 15, 0, 8, 13, 3, 12, 9, 7, 5, 10, 6, 1},
+                {13, 0, 11, 7, 4, 9, 1, 10, 14, 3, 5, 12, 2, 15, 8, 6},
+                {1, 4, 11, 13, 12, 3, 7, 14, 10, 15, 6, 8, 0, 5, 9, 2},
+                {6, 11, 13, 8, 1, 4, 10, 7, 9, 5, 0, 15, 14, 2, 3, 12}
+            },
+            {
+                {13, 2, 8, 4, 6, 15, 11, 1, 10, 9, 3, 14, 5, 0, 12, 7},
+                {1, 15, 13, 8, 10, 3, 7, 4, 12, 5, 6, 11, 0, 14, 9, 2},
+                {7, 11, 4, 1, 9, 12, 14, 2, 0, 6, 10, 13, 15, 3, 5, 8},
+                {2, 1, 14, 7, 4, 10, 8, 13, 15, 12, 9, 0, 3, 5, 6, 11}
+            }
+        };
+
+        Dictionary<string, char> BinToHexDict = DES.HexToBinDict.ToDictionary(pair => pair.Value, pair => pair.Key);
+
         public override string Decrypt(string cipherText, string key)
         {
             string plainText = string.Empty;
@@ -118,97 +173,100 @@ namespace SecurityLibrary.DES
 
             // Decoding message
             // initial permutation
-            string lr_prev = permutation(binCipher, FP);
+            string lr_init = permutation(binCipher, IP);
             string lr_final = string.Empty;
+
+            string l = lr_init.Substring(0, 32);
+            string r = lr_init.Substring(32, 32);
 
             // rounds
             for (int i = 15; i >= 0; i--)
             {
-                string l = lr_prev.Substring(32);
-                string r = XOR(mangler_func(l/*prev R*/, subkeys[i]), lr_prev.Substring(0, 32));
-
-                lr_prev = l + r;
-
-                // Swap l and r after final round
-                if (i == 0)
-                    lr_final = r + l;
+                l = XOR(mangler_func(r, subkeys[i]), l);
+                swap(ref l, ref r);
             }
+            swap(ref l, ref r);
+
+            lr_final = l + r;
 
             // final permutation
-            plainText = permutation(lr_final, FP);
-
+            string binPlainText = permutation(lr_final, FP);
+            plainText = bin_to_hex(binPlainText);
 
             return plainText;
         }
 
         public override string Encrypt(string plainText, string key)
         {
+            //convert the pt and key to binary
+            string binary_pt = hex_to_bin(plainText);
+            string binary_key = hex_to_bin(key);
             //do the initial permutation
-            string plain_text_matrix = permutation(plainText, IP);
-            //divide the plain text to L and R 
-            string LPT = plain_text_matrix.Substring(0, 32);
-            string RPT = plain_text_matrix.Substring(32, 32);
+            string plain_text_permutated = permutation(binary_pt, IP);
+            //divide the plain text to LPT and RPT 
+            string LPT = plain_text_permutated.Substring(0, 32);
+            string RPT = plain_text_permutated.Substring(32, 32);
+            //do the first key permutation
+            string key_permutated = permutation(binary_key, PC1);
+            List<string> keys = generate_keys(key_permutated);
             //perform the 16 round 
             for (int i = 0; i < 16; i++)
             {
                 //el expansion da ka2nena bn3ml padding lel RPT 3shan n3rf n3mlha xor m3 l key el huwa 
                 //48 bit huwa kman we bn3ml kda according to el exp_d zaiha zai el ip kda nafs l fekra
-                string right = right_expansion(RPT);
+                string expanded_right = permutation(RPT, exp_d);
+                string xored_right = XOR(expanded_right, keys[i]);
+                //xored_right should be sboxed
+                string sboxed_right = s_box(xored_right);
+                string permutated_sboxed_right = permutation(sboxed_right, P);
+
+                LPT = XOR(LPT, permutated_sboxed_right);
+                swap(ref LPT, ref RPT);
             }
-            return null;
+            swap(ref LPT, ref RPT);
+            plainText = LPT + RPT;
+            string result = permutation(plainText, FP);
+            return bin_to_hex(result);
         }
 
         private string hex_to_bin(string text)
         {
-            string hex = string.Empty;
+            string bin = string.Empty;
 
             for (int i = 2; i < text.Length; i++)
             {
-                hex += convertDict[text[i]];
+                bin += HexToBinDict[text[i]];
             }
 
-            return hex;
+            return bin;
         }
 
         private List<string> key_creation(string key)
         {
             string kPlus = permutation(key, PC1);
 
-            string c_prev = kPlus.Substring(0, 28);
-            string d_prev = kPlus.Substring(28);
+            string c = kPlus.Substring(0, 28);
+            string d = kPlus.Substring(28);
 
             List<string> subkeys = new List<string>();
 
-            for (int i = 1; i <= 16; i++)
+            for (int i = 0; i < 16; i++)
             {
-                string c = c_prev.Substring(shifts[i - 1]) + c_prev.Substring(0, shifts[i - 1]);
-                string d = d_prev.Substring(shifts[i - 1]) + d_prev.Substring(0, shifts[i - 1]);
+                
+                c = shift_left(c, shifts[i]);
+                d = shift_left(d, shifts[i]);
                 string cd = c + d;
-                string subkey = string.Empty;
 
                 subkeys.Add(permutation(cd, PC2));
-
-                c_prev = c;
-                d_prev = d;
             }
 
             return subkeys;
         }
 
-        private string right_expansion(string text)
-        {
-            string new_text = "";
-            for (int i = 0; i < 48; i++)
-            {
-                new_text += text[exp_d[i] - 1];
-            }
-            return new_text;
-        }
-
         private string permutation(string text, int[] P)
         {
             string result = "";
-            for (int i = 0; i < text.Length; i++)
+            for (int i = 0; i < P.Length; i++)
             {
                 result += text[P[i] - 1];
             }
@@ -229,7 +287,7 @@ namespace SecurityLibrary.DES
 
         private string mangler_func(string right, string key)
         {
-            string expanded = right_expansion(right);
+            string expanded = permutation(right, exp_d);
             string xor_res = XOR(expanded, key);
             string reduced = s_box(xor_res);
             string permuted = permutation(reduced, P);
@@ -237,10 +295,82 @@ namespace SecurityLibrary.DES
             return permuted;
 
         }
-        private string s_box(string text) 
+        private void swap(ref string left, ref string right)
         {
-            return null;
+            string temp;
+            temp = left;
+            left = right;
+            right = temp;
         }
-        
+
+        private string s_box(string word)
+        {
+            String[] str_list = new String[8];
+            int counter = 0;
+
+            for (int i = 0; i < 48; i += 6)
+            {
+                str_list[counter] = word.Substring(i, 6);
+                counter++;
+            }
+
+            string final = "";
+
+            for (int i = 0; i < 8; i++)
+            {
+                char[] chars = { str_list[i][0], str_list[i][5] };
+                string s1 = new string(chars);
+
+                String s2 = str_list[i].Substring(1, 4);
+
+                int decimalValue1 = Convert.ToInt32(s1, 2);
+                int decimalValue2 = Convert.ToInt32(s2, 2);
+                // value get from s box 
+                int value = sboxes[i, decimalValue1, decimalValue2];
+
+                string binary2 = Convert.ToString(value, 2);
+                if (binary2.Length < 4)
+                    binary2 = binary2.PadLeft(4, '0');
+
+                final += binary2;
+            }
+            return final;
+        }
+        private string bin_to_hex(string text)
+        {
+            string hex = "0x";
+
+            for (int i = 0; i < text.Length; i+=4)
+            {
+                hex += BinToHexDict[text.Substring(i, 4)];
+            }
+
+            return hex;
+        }
+        private List<string> generate_keys(string key)
+        {
+            List<string> result = new List<string>();
+            string left_key = key.Substring(0, 28);
+            string right_key = key.Substring(28, 28);
+
+            for (int i = 0; i < 16; i++)
+            {
+                left_key = shift_left(left_key, shifts[i]);
+                right_key = shift_left(right_key, shifts[i]);
+                string complete_key = left_key + right_key;
+                string compressed_key = permutation(complete_key, PC2);
+                result.Add(compressed_key);
+            }
+            return result;
+        }
+        private string shift_left(string key, int n)
+        {
+            string result = key;
+            for (int i = 0; i < n; i++)
+            {
+                result = result.Substring(1, key.Length - 1) + result.Substring(0, 1);
+            }
+            return result;
+        }
     }
 }
