@@ -11,7 +11,7 @@ namespace SecurityLibrary.DES
     /// </summary>
     public class DES : CryptographicTechnique
     {
-        Dictionary<char, string> convertDict = new Dictionary<char, string>()
+        Dictionary<char, string> convert_hex_Dict = new Dictionary<char, string>()
         {
             { '0', "0000" },
             { '1', "0001" },
@@ -29,6 +29,25 @@ namespace SecurityLibrary.DES
             { 'D', "1101" },
             { 'E', "1110" },
             { 'F', "1111" },
+        };
+        Dictionary<string, char> convert_binary_Dict = new Dictionary<string, char>()
+        {
+            { "0000",'0'},
+            { "0001",'1'},
+            { "0010",'2'},
+            { "0011",'3'},
+            { "0100",'4'},
+            { "0101",'5'},
+            { "0110",'6'},
+            { "0111",'7'},
+            { "1000",'8'},
+            { "1001",'9'},
+            { "1010",'A'},
+            { "1011",'B'},
+            { "1100",'C'},
+            { "1101",'D'},
+            { "1110",'E'},
+            { "1111",'F'},
         };
 
         int[] IP = new int[]
@@ -150,7 +169,37 @@ namespace SecurityLibrary.DES
 
         public override string Decrypt(string cipherText, string key)
         {
-            throw new NotImplementedException();
+            string plainText = string.Empty;
+
+            // Converting from hex to bin
+            string binKey = hexa_to_binary(key);
+            string binCipher = hexa_to_binary(cipherText);
+
+            // Key Creation
+            List<string> subkeys = key_creation(binKey);
+            // Decoding message
+            // initial permutation
+            string lr_init = permutation(binCipher, IP);
+            string lr_final = string.Empty;
+
+            string l = lr_init.Substring(0, 32);
+            string r = lr_init.Substring(32, 32);
+
+            // rounds
+            for (int i = 15; i >= 0; i--)
+            {
+                l = XOR(mangler_func(r, subkeys[i]), l);
+                swap(ref l, ref r);
+            }
+            swap(ref l, ref r);
+
+            lr_final = l + r;
+
+            // final permutation
+            string binPlainText = permutation(lr_final, FP);
+            plainText = binary_to_hex(binPlainText);
+
+            return plainText;
         }
 
         public override string Encrypt(string plainText, string key)
@@ -195,6 +244,8 @@ namespace SecurityLibrary.DES
             }
             return result;
         }
+
+
         private string XOR(string text, string key)
         {
             string result = "";
@@ -207,6 +258,18 @@ namespace SecurityLibrary.DES
             }
             return result;
         }
+
+
+        private string mangler_func(string right, string key)
+        {
+            string expanded = permutation(right, exp_d);
+            string xor_res = XOR(expanded, key);
+            string reduced = s_box(xor_res);
+            string permuted = permutation(reduced, sbox_permutation);
+            return permuted;
+        }
+
+
         private List<string> generate_keys(string key)
         {
             List<string> result = new List<string>();
@@ -222,6 +285,28 @@ namespace SecurityLibrary.DES
                 result.Add(compressed_key);
             }
             return result;
+        }
+
+        private List<string> key_creation(string key)
+        {
+            string kPlus = permutation(key, KP);
+
+            string c = kPlus.Substring(0, 28);
+            string d = kPlus.Substring(28);
+
+            List<string> subkeys = new List<string>();
+
+            for (int i = 0; i < 16; i++)
+            {
+
+                c = shift_left(c, shifting_bits[i]);
+                d = shift_left(d, shifting_bits[i]);
+                string cd = c + d;
+
+                subkeys.Add(permutation(cd, KC));
+            }
+
+            return subkeys;
         }
 
         private string shift_left(string key, int n)
@@ -281,7 +366,7 @@ namespace SecurityLibrary.DES
             string hex = string.Empty;
             for (int i = 2; i < text.Length; i++)
             {
-                hex += convertDict[text[i]];
+                hex += convert_hex_Dict[text[i]];
             }
             return hex;
         }
@@ -292,6 +377,7 @@ namespace SecurityLibrary.DES
                 Enumerable.Range(0, binaryvalue.Length / 8)
                     .Select(i => Convert.ToByte(binaryvalue.Substring(i * 8, 8), 2).ToString("X2")));
             return "0x" + hex;
+
         }
     }
 }
