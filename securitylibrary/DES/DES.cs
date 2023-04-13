@@ -11,7 +11,7 @@ namespace SecurityLibrary.DES
     /// </summary>
     public class DES : CryptographicTechnique
     {
-        Dictionary<char, string> convert_hex_Dict = new Dictionary<char, string>()
+        static Dictionary<char, string> Hex_to_binary_dict = new Dictionary<char, string>()
         {
             { '0', "0000" },
             { '1', "0001" },
@@ -30,25 +30,8 @@ namespace SecurityLibrary.DES
             { 'E', "1110" },
             { 'F', "1111" },
         };
-        Dictionary<string, char> convert_binary_Dict = new Dictionary<string, char>()
-        {
-            { "0000",'0'},
-            { "0001",'1'},
-            { "0010",'2'},
-            { "0011",'3'},
-            { "0100",'4'},
-            { "0101",'5'},
-            { "0110",'6'},
-            { "0111",'7'},
-            { "1000",'8'},
-            { "1001",'9'},
-            { "1010",'A'},
-            { "1011",'B'},
-            { "1100",'C'},
-            { "1101",'D'},
-            { "1110",'E'},
-            { "1111",'F'},
-        };
+
+        Dictionary<string, char> BinToHexDict = DES.Hex_to_binary_dict.ToDictionary(pair => pair.Value, pair => pair.Key);
 
         int[] IP = new int[]
         {
@@ -366,17 +349,20 @@ namespace SecurityLibrary.DES
             string hex = string.Empty;
             for (int i = 2; i < text.Length; i++)
             {
-                hex += convert_hex_Dict[text[i]];
+                hex += Hex_to_binary_dict[text[i]];
             }
             return hex;
         }
         private string binary_to_hex(string binaryvalue)
         {
-            //not mine but for test
-            var hex = string.Join("",
-                Enumerable.Range(0, binaryvalue.Length / 8)
-                    .Select(i => Convert.ToByte(binaryvalue.Substring(i * 8, 8), 2).ToString("X2")));
-            return "0x" + hex;
+            string hex = "0x";
+
+            for (int i = 0; i < binaryvalue.Length; i += 4)
+            {
+                hex += BinToHexDict[binaryvalue.Substring(i, 4)];
+            }
+
+            return hex;
 
         }
     }
